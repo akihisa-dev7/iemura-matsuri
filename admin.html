@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>参加者管理 | 家村祭</title>
+<style>
+  :root{
+    --sumi:#1c1a17;--sumi-soft:#3d3832;--washi:#faf6ee;--washi-deep:#f1ead9;
+    --shu:#ce3e2c;--shu-deep:#a92f20;--ai:#234a6b;--kin:#c89b3c;
+    --line:rgba(28,26,23,.14);
+    --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+    --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","YuGothic","Noto Sans JP",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--sans);color:var(--sumi);background:var(--washi);line-height:1.7;min-height:100svh}
+  .kouhaku{height:10px;background:repeating-linear-gradient(90deg,var(--shu) 0 42px,#fff 42px 84px)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  a{color:inherit;text-decoration:none}
+  .brand{font-family:var(--serif);font-weight:700;letter-spacing:.3em;display:flex;align-items:center;gap:.55rem}
+  .brand .maru{width:.8em;height:.8em;border-radius:50%;background:var(--shu)}
+  .brand small{font-family:var(--sans);font-weight:400;letter-spacing:.15em;font-size:.75rem;color:var(--sumi-soft);margin-left:.4rem}
+  .head-actions{display:flex;gap:.5rem}
+  button,.btn{font:inherit;font-size:.82rem;letter-spacing:.08em;border-radius:999px;padding:.45rem 1.1rem;cursor:pointer;
+    border:1px solid var(--sumi);background:transparent;color:var(--sumi);transition:background .2s,color .2s}
+  button:hover{background:var(--sumi);color:var(--washi)}
+  button.primary{background:var(--shu);border-color:var(--shu);color:#fff}
+  button.primary:hover{background:var(--shu-deep);border-color:var(--shu-deep)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+  button[disabled]{opacity:.5;cursor:wait}
+  main{max-width:1080px;margin:0 auto;padding:1.6rem 1.2rem 4rem}
+
+  /* login */
+  .login{max-width:400px;margin:12vh auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:2rem 1.6rem}
+  .login h1{font-family:var(--serif);font-size:1.25rem;letter-spacing:.3em;margin-bottom:.3rem}
+  .login p{font-size:.85rem;color:var(--sumi-soft);margin-bottom:1.2rem}
+  .login label{display:block;font-size:.82rem;font-weight:700;letter-spacing:.1em;margin-bottom:.35rem}
+  .login input{width:100%;font:inherit;padding:.7rem .9rem;border:1px solid rgba(28,26,23,.3);border-radius:8px;background:var(--washi);margin-bottom:1rem}
+  .login button{width:100%;padding:.7rem}
+  .msg{font-size:.85rem;margin-top:.9rem;color:var(--shu-deep);min-height:1.2em}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.4rem}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
+  .stat .label{font-size:.75rem;letter-spacing:.12em;color:var(--sumi-soft)}
+  .stat .num{font-family:var(--serif);font-weight:700;font-size:2rem;line-height:1.2;font-variant-numeric:tabular-nums}
+  .stat .num small{font-size:.85rem;margin-left:.2rem;font-family:var(--sans);font-weight:400}
+  .stat .sub{font-size:.72rem;color:var(--sumi-soft)}
+  @media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:1/-1}}
+
+  .univ{background:#fff;border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.4rem}
+  .univ h2,.list-head h2{font-family:var(--serif);font-size:.95rem;letter-spacing:.25em;margin-bottom:.6rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem}
+  .chip{font-size:.8rem;border:1px solid var(--line);background:var(--washi);border-radius:999px;padding:.2rem .75rem;cursor:pointer}
+  .chip b{color:var(--shu-deep);margin-left:.35rem;font-variant-numeric:tabular-nums}
+  .chip.on{background:var(--sumi);color:var(--washi);border-color:var(--sumi)}
+  .chip.on b{color:var(--kin)}
+
+  .list-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.6rem}
+  .list-head h2{margin:0}
+  .search{font:inherit;font-size:.85rem;padding:.45rem .9rem;border:1px solid rgba(28,26,23,.3);border-radius:999px;background:#fff;min-width:0;width:240px;max-width:100%}
+  .table-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:.75rem;letter-spacing:.12em;color:var(--sumi-soft);font-weight:700;background:var(--washi-deep);cursor:pointer;user-select:none}
+  th[aria-sort="ascending"]::after{content:" ▲";font-size:.65rem}
+  th[aria-sort="descending"]::after{content:" ▼";font-size:.65rem}
+  td.num{font-variant-numeric:tabular-nums}
+  td a{color:var(--ai)}
+  tr:last-child td{border-bottom:none}
+  .empty{padding:2.4rem 1rem;text-align:center;color:var(--sumi-soft);font-size:.88rem}
+  .updated{font-size:.75rem;color:var(--sumi-soft);margin-top:.6rem}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="kouhaku" aria-hidden="true"></div>
+<header>
+  <a class="brand" href="./"><span class="maru"></span>家村祭<small>参加者管理</small></a>
+  <div class="head-actions" id="headActions" hidden>
+    <button type="button" id="reloadBtn">更新</button>
+    <button type="button" id="csvBtn">CSVダウンロード</button>
+    <button type="button" id="logoutBtn">ログアウト</button>
+  </div>
+</header>
+
+<main>
+  <section class="login" id="loginView">
+    <h1>管理画面</h1>
+    <p>参加申請の一覧を表示します。管理用パスワードを入力してください。</p>
+    <form id="loginForm">
+      <label for="keyInput">パスワード</label>
+      <input id="keyInput" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit" id="loginBtn">表示する</button>
+    </form>
+    <p class="msg" id="loginMsg" role="alert"></p>
+  </section>
+
+  <section id="dashView" hidden>
+    <div class="stats">
+      <div class="stat"><div class="label">申請件数</div><div class="num" id="sCount">0<small>件</small></div></div>
+      <div class="stat"><div class="label">参加人数(合計)</div><div class="num" id="sPeople">0<small>名</small></div><div class="sub" id="sPeopleSub"></div></div>
+      <div class="stat"><div class="label">大学数</div><div class="num" id="sUniv">0<small>校</small></div></div>
+    </div>
+
+    <div class="univ">
+      <h2>大学別</h2>
+      <div class="chips" id="univChips"></div>
+    </div>
+
+    <div class="list-head">
+      <h2>申請一覧</h2>
+      <input class="search" id="search" type="search" placeholder="名前・大学・メールで検索" aria-label="検索">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th data-k="at" aria-sort="descending">受付日時</th>
+          <th data-k="name">お名前</th>
+          <th data-k="countNum">人数</th>
+          <th data-k="university">大学名</th>
+          <th data-k="email">メールアドレス</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>まだ申請はありません。</div>
+    </div>
+    <p class="updated" id="updated"></p>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+(function(){
+  const API = (window.IEMURA_API_URL || '').trim();
+  const $ = (id) => document.getElementById(id);
+  let key = '';
+  let rows = [];
+  let univFilter = '';
+  let sortK = 'at', sortDir = -1;
+
+  try { key = sessionStorage.getItem('iemura-admin-key') || ''; } catch(e) {}
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function countNum(c){ const m = String(c).match(/\d+/); return m ? parseInt(m[1] || m[0], 10) : 0; }
+
+  async function load(){
+    if (!API){ $('loginMsg').textContent = '送信先(config.js)がまだ設定されていません。'; return false; }
+    const url = API + (API.includes('?') ? '&' : '?') + 'action=list&key=' + encodeURIComponent(key) + '&t=' + Date.now();
+    const res = await fetch(url);
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error === 'unauthorized' ? 'パスワードが違います。' : (out.error || '読み込みに失敗しました。'));
+    rows = (out.rows || []).map(r => Object.assign({}, r, {countNum: countNum(r.count)}));
+    return true;
+  }
+
+  function render(){
+    const people = rows.reduce((a, r) => a + r.countNum, 0);
+    const plus = rows.filter(r => /以上/.test(r.count)).length;
+    const byU = {};
+    rows.forEach(r => { const u = r.university || '(未記入)'; byU[u] = byU[u] || {n:0, p:0}; byU[u].n++; byU[u].p += r.countNum; });
+
+    $('sCount').innerHTML = rows.length + '<small>件</small>';
+    $('sPeople').innerHTML = people + (plus ? '+' : '') + '<small>名</small>';
+    $('sPeopleSub').textContent = plus ? '「6名以上」の ' + plus + ' 件は6名で計算' : '';
+    $('sUniv').innerHTML = Object.keys(byU).length + '<small>校</small>';
+
+    const us = Object.keys(byU).sort((a, b) => byU[b].p - byU[a].p || a.localeCompare(b, 'ja'));
+    $('univChips').innerHTML = us.length
+      ? us.map(u => '<button type="button" class="chip' + (u === univFilter ? ' on' : '') + '" data-u="' + esc(u) + '">' + esc(u) + '<b>' + byU[u].p + '名</b></button>').join('')
+      : '<span style="font-size:.85rem;color:var(--sumi-soft)">まだありません</span>';
+
+    const q = $('search').value.trim().toLowerCase();
+    const list = rows
+      .filter(r => !univFilter || (r.university || '(未記入)') === univFilter)
+      .filter(r => !q || [r.name, r.university, r.email].join(' ').toLowerCase().includes(q))
+      .sort((a, b) => {
+        const x = a[sortK], y = b[sortK];
+        return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'ja')) * sortDir;
+      });
+
+    $('tbody').innerHTML = list.map(r =>
+      '<tr><td class="num">' + esc(r.at) + '</td><td>' + esc(r.name) + '</td><td class="num">' + esc(r.count) +
+      '</td><td>' + esc(r.university) + '</td><td><a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a></td></tr>'
+    ).join('');
+    $('empty').hidden = list.length > 0;
+    $('empty').textContent = rows.length ? '該当する申請はありません。' : 'まだ申請はありません。';
+    document.querySelectorAll('th[data-k]').forEach(th => {
+      th.setAttribute('aria-sort', th.dataset.k === sortK ? (sortDir > 0 ? 'ascending' : 'descending') : 'none');
+    });
+    const d = new Date();
+    $('updated').textContent = '最終更新 ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function showDash(on){
+    $('loginView').hidden = on;
+    $('dashView').hidden = !on;
+    $('headActions').hidden = !on;
+  }
+
+  async function enter(){
+    try {
+      if (await load()){
+        try { sessionStorage.setItem('iemura-admin-key', key); } catch(e) {}
+        showDash(true); render();
+      }
+    } catch (e) {
+      try { sessionStorage.removeItem('iemura-admin-key'); } catch(_) {}
+      showDash(false);
+      $('loginMsg').textContent = /fetch|network|JSON/i.test(e.message) ? '接続できませんでした。送信先URLをご確認ください。' : e.message;
+    }
+  }
+
+  $('loginForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    key = $('keyInput').value;
+    $('loginMsg').textContent = '';
+    $('loginBtn').disabled = true;
+    await enter();
+    $('loginBtn').disabled = false;
+  });
+  $('reloadBtn').addEventListener('click', async () => {
+    $('reloadBtn').disabled = true;
+    try { await load(); render(); } catch (e) { alertBox(e.message); }
+    $('reloadBtn').disabled = false;
+  });
+  function alertBox(t){ $('updated').textContent = t; }
+  $('logoutBtn').addEventListener('click', () => {
+    key = ''; rows = [];
+    try { sessionStorage.removeItem('iemura-admin-key'); } catch(e) {}
+    $('keyInput').value = '';
+    showDash(false);
+  });
+  $('search').addEventListener('input', render);
+  $('univChips').addEventListener('click', ev => {
+    const c = ev.target.closest('.chip'); if (!c) return;
+    univFilter = univFilter === c.dataset.u ? '' : c.dataset.u; render();
+  });
+  document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => {
+    if (sortK === th.dataset.k) sortDir *= -1; else { sortK = th.dataset.k; sortDir = th.dataset.k === 'at' ? -1 : 1; }
+    render();
+  }));
+  $('csvBtn').addEventListener('click', () => {
+    const head = ['受付日時', 'お名前', 'メールアドレス', '参加人数', '大学名'];
+    const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const body = rows.map(r => [r.at, r.name, r.email, r.count, r.university].map(q).join(','));
+    const blob = new Blob(['﻿' + [head.map(q).join(',')].concat(body).join('\r\n')], {type: 'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'iemura-matsuri-entries.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  if (key) enter();
+})();
+</script>
+</body>
+</html>
