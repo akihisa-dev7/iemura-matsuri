@@ -12,25 +12,36 @@ main に push すると GitHub Actions で自動公開されます。
 
 ## 申請フォームのセットアップ（最初に1回だけ）
 
-申請データは Google スプレッドシートに保存されます。
+申請データは Supabase（Postgres）に保存されます。
 
-1. Google スプレッドシートを新規作成（名前は「家村祭 申請」など）
-2. メニューの **拡張機能 → Apps Script** を開く
-3. 最初からある `コード.gs` の中身を全部消して、`apps-script/Code.gs` の中身を貼り付ける
-4. `ADMIN_KEY` の値を管理画面用のパスワードに変更して保存（💾）
-5. 右上の **デプロイ → 新しいデプロイ** → 歯車から種類「**ウェブアプリ**」を選ぶ
-   - 次のユーザーとして実行：**自分**
-   - アクセスできるユーザー：**全員**
-6. 「デプロイ」→ Google アカウントのアクセス許可を承認（「詳細」→「安全ではないページに移動」で進めます）
-7. 表示された **ウェブアプリの URL**（`https://script.google.com/macros/s/…/exec`）を `config.js` の `IEMURA_API_URL` に入れて push
+1. https://supabase.com でプロジェクトを作成（リージョンは Tokyo がおすすめ）
+2. **SQL Editor** を開き、`supabase/schema.sql` の中身を貼り付けて **Run**
+3. **Authentication → Sign In / Providers** で「Allow new users to sign up」を **オフ**
+4. **Authentication → Users → Add user → Create new user** で管理者のメールアドレスとパスワードを作成（Auto Confirm にチェック）
+5. SQL Editor で管理者を登録して Run
+   ```sql
+   insert into public.admins (email) values ('管理者のメールアドレス');
+   ```
+6. **Project Settings → API Keys** の **Project URL** と **Publishable key**（または anon key）を `config.js` に入れて push
+   - `secret` / `service_role` キーは絶対に入れないこと
 
 `config.js` が空の間は、フォームはメールアプリを開く方式で動きます。
 
-### Apps Script を書き換えたとき
+## 権限
 
-**デプロイ → デプロイを管理 → 鉛筆アイコン → バージョン「新バージョン」→ デプロイ** で更新すると URL が変わりません。
+| | 申請の追加 | 一覧の閲覧 | 修正・削除 |
+|---|---|---|---|
+| 誰でも（フォーム） | ○ | × | × |
+| `admins` に登録したユーザー（管理画面） | ○ | ○ | × |
+| Supabase のダッシュボード | ○ | ○ | ○（Table Editor） |
+
+管理者を増やすときは、手順4・5を繰り返してください。
 
 ## 管理画面
 
-`admin.html` を開き、`ADMIN_KEY` に設定したパスワードを入力すると、申請一覧・合計人数・大学別人数が表示されます。CSV ダウンロードもできます。
-申請の削除・修正はスプレッドシート上で直接行ってください。
+`admin.html` を開き、管理者のメールアドレスとパスワードでログインすると、申請一覧・合計人数・大学別人数が表示されます。CSV ダウンロードもできます。
+申請の削除・修正は Supabase の **Table Editor → entries** で直接行ってください。
+
+## 注意
+
+Supabase の無料プランは、1週間アクセスがないとプロジェクトが一時停止します。ダッシュボードから再開できます（データは消えません）。

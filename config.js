@@ -1,4 +1,8 @@
-// 家村祭 申請フォームの送信先
-// Google Apps Script を「ウェブアプリ」としてデプロイしたときの URL（https://script.google.com/macros/s/.../exec）を入れてください。
+// 家村祭 申請データの保存先（Supabase）
+// Supabase の Project Settings → API Keys にある値を入れてください。
+//   IEMURA_SUPABASE_URL : Project URL（https://xxxx.supabase.co）
+//   IEMURA_SUPABASE_KEY : Publishable key（sb_publishable_…）または anon key
+// ※ どちらも公開して問題ない値です。secret / service_role キーは絶対に入れないでください。
 // 空のままだと、申請フォームはメールアプリを開く方式で動きます。
-window.IEMURA_API_URL = "";
+window.IEMURA_SUPABASE_URL = "";
+window.IEMURA_SUPABASE_KEY = "";

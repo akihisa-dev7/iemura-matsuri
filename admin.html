@@ -88,11 +88,13 @@
 <main>
   <section class="login" id="loginView">
     <h1>管理画面</h1>
-    <p>参加申請の一覧を表示します。管理用パスワードを入力してください。</p>
+    <p>参加申請の一覧を表示します。管理者のメールアドレスとパスワードでログインしてください。</p>
     <form id="loginForm">
+      <label for="emailInput">メールアドレス</label>
+      <input id="emailInput" type="email" autocomplete="username" required>
       <label for="keyInput">パスワード</label>
       <input id="keyInput" type="password" autocomplete="current-password" required>
-      <button class="primary" type="submit" id="loginBtn">表示する</button>
+      <button class="primary" type="submit" id="loginBtn">ログイン</button>
     </form>
     <p class="msg" id="loginMsg" role="alert"></p>
   </section>
@@ -130,27 +132,29 @@
 </main>
 
 <script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
-  const API = (window.IEMURA_API_URL || '').trim();
+  const SB_URL = (window.IEMURA_SUPABASE_URL || '').trim();
+  const SB_KEY = (window.IEMURA_SUPABASE_KEY || '').trim();
+  const db = SB_URL && SB_KEY && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
   const $ = (id) => document.getElementById(id);
-  let key = '';
   let rows = [];
   let univFilter = '';
   let sortK = 'at', sortDir = -1;
 
-  try { key = sessionStorage.getItem('iemura-admin-key') || ''; } catch(e) {}
-
   function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function countNum(c){ const m = String(c).match(/\d+/); return m ? parseInt(m[1] || m[0], 10) : 0; }
 
+  function fmt(iso){
+    const d = new Date(iso), p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
   async function load(){
-    if (!API){ $('loginMsg').textContent = '送信先(config.js)がまだ設定されていません。'; return false; }
-    const url = API + (API.includes('?') ? '&' : '?') + 'action=list&key=' + encodeURIComponent(key) + '&t=' + Date.now();
-    const res = await fetch(url);
-    const out = await res.json();
-    if (!out.ok) throw new Error(out.error === 'unauthorized' ? 'パスワードが違います。' : (out.error || '読み込みに失敗しました。'));
-    rows = (out.rows || []).map(r => Object.assign({}, r, {countNum: countNum(r.count)}));
+    const { data, error } = await db.from('entries').select('id, created_at, name, count, university').order('created_at', { ascending: false });
+    if (error) throw new Error('読み込みに失敗しました。(' + error.message + ')');
+    rows = (data || []).map(r => Object.assign({}, r, {at: fmt(r.created_at), countNum: countNum(r.count)}));
     return true;
   }
 
@@ -200,23 +204,32 @@
 
   async function enter(){
     try {
-      if (await load()){
-        try { sessionStorage.setItem('iemura-admin-key', key); } catch(e) {}
-        showDash(true); render();
+      await load();
+      if (!rows.length && !(await isAdmin())){
+        await db.auth.signOut();
+        throw new Error('このアカウントには閲覧権限がありません。(admins テーブルに登録してください)');
       }
+      showDash(true); render();
     } catch (e) {
-      try { sessionStorage.removeItem('iemura-admin-key'); } catch(_) {}
       showDash(false);
-      $('loginMsg').textContent = /fetch|network|JSON/i.test(e.message) ? '接続できませんでした。送信先URLをご確認ください。' : e.message;
+      $('loginMsg').textContent = /fetch|network/i.test(e.message) ? '接続できませんでした。config.js の設定をご確認ください。' : e.message;
     }
+  }
+
+  // 権限がないと一覧が空で返ってくるので、空のときだけ管理者かどうかを確認する
+  async function isAdmin(){
+    const { data, error } = await db.rpc('is_admin');
+    return !error && data === true;
   }
 
   $('loginForm').addEventListener('submit', async ev => {
     ev.preventDefault();
-    key = $('keyInput').value;
     $('loginMsg').textContent = '';
+    if (!db){ $('loginMsg').textContent = '保存先(config.js)がまだ設定されていません。'; return; }
     $('loginBtn').disabled = true;
-    await enter();
+    const { error } = await db.auth.signInWithPassword({ email: $('emailInput').value.trim(), password: $('keyInput').value });
+    if (error) $('loginMsg').textContent = 'メールアドレスまたはパスワードが違います。';
+    else await enter();
     $('loginBtn').disabled = false;
   });
   $('reloadBtn').addEventListener('click', async () => {
@@ -225,9 +238,9 @@
     $('reloadBtn').disabled = false;
   });
   function alertBox(t){ $('updated').textContent = t; }
-  $('logoutBtn').addEventListener('click', () => {
-    key = ''; rows = [];
-    try { sessionStorage.removeItem('iemura-admin-key'); } catch(e) {}
+  $('logoutBtn').addEventListener('click', async () => {
+    rows = [];
+    await db.auth.signOut();
     $('keyInput').value = '';
     showDash(false);
   });
@@ -242,7 +255,8 @@
   }));
   $('csvBtn').addEventListener('click', () => {
     const head = ['受付日時', 'お名前', '参加人数', '大学名'];
-    const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+    // Excel で数式として解釈されないようにする
+    const q = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
     const body = rows.map(r => [r.at, r.name, r.count, r.university].map(q).join(','));
     const blob = new Blob(['﻿' + [head.map(q).join(',')].concat(body).join('\r\n')], {type: 'text/csv'});
     const a = document.createElement('a');
@@ -252,7 +266,7 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
-  if (key) enter();
+  if (db) db.auth.getSession().then(({ data }) => { if (data.session) enter(); });
 })();
 </script>
 </body>

@@ -195,6 +195,7 @@
 <footer>© 2026 家村祭実行委員会</footer>
 
 <script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   const form = document.getElementById('entryForm');
@@ -202,7 +203,9 @@
   const errBox = document.getElementById('formError');
   const done = document.getElementById('formDone');
   const doneText = document.getElementById('doneText');
-  const API = (window.IEMURA_API_URL || '').trim();
+  const SB_URL = (window.IEMURA_SUPABASE_URL || '').trim();
+  const SB_KEY = (window.IEMURA_SUPABASE_KEY || '').trim();
+  const db = SB_URL && SB_KEY && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
   const FALLBACK_MAIL = 'kaihatsu@reoken.com';
 
   const msgs = {
@@ -255,7 +258,10 @@
       website: form.elements.website.value
     };
 
-    if (!API){
+    // ボット対策（見えない入力欄に値が入っていたら保存しない）
+    if (data.website){ showDone(); return; }
+
+    if (!db){
       const body = '【家村祭 参加申請】\n\nお名前:' + data.name + '\n参加人数:' + data.count + '\n大学名:' + data.university + '\n';
       location.href = 'mailto:' + FALLBACK_MAIL + '?subject=' + encodeURIComponent('家村祭 参加申請(' + data.name + ')') +
         '&body=' + encodeURIComponent(body);
@@ -267,18 +273,15 @@
     const label = btn.textContent;
     btn.textContent = '送信中…';
     try {
-      const res = await fetch(API, {
-        method: 'POST',
-        headers: {'Content-Type': 'text/plain;charset=utf-8'},
-        body: JSON.stringify(data)
+      const { error } = await db.from('entries').insert({
+        name: data.name, count: data.count, university: data.university
       });
-      const out = await res.json();
-      if (!out.ok) throw new Error(out.error || '送信に失敗しました');
+      if (error) throw new Error('send failed: ' + error.message);
       form.reset();
       keys.forEach(function(k){ form.elements[k].closest('.field').classList.remove('invalid'); });
       showDone();
     } catch (e) {
-      showError((e && e.message && !/fetch|network|JSON/i.test(e.message) ? e.message : '送信できませんでした。通信状況をご確認のうえ、もう一度お試しください。'));
+      showError((e && e.message && !/fetch|network|JSON|send failed/i.test(e.message) ? e.message : '送信できませんでした。通信状況をご確認のうえ、もう一度お試しください。'));
     } finally {
       btn.disabled = false;
       btn.textContent = label;
