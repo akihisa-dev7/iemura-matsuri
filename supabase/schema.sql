@@ -5,7 +5,7 @@ create table if not exists public.entries (
   id          bigint generated always as identity primary key,
   created_at  timestamptz not null default now(),
   name        text not null check (char_length(btrim(name)) between 1 and 100),
-  count       text not null check (count in ('1名','2名','3名','4名','5名','6名以上')),
+  count       text not null check (count ~ '^([1-9]|[1-9][0-9]|100)名$'),  -- 1〜100名
   university  text not null check (char_length(btrim(university)) between 1 and 100)
 );
 
@@ -47,3 +47,7 @@ grant select on public.entries to authenticated;
 
 -- ▼ 管理者のメールアドレスを登録（自分のアドレスに書き換えて実行）
 -- insert into public.admins (email) values ('you@example.com') on conflict do nothing;
+
+-- ▼ 参加人数を「1〜100名」に変更したときの更新用（既存のテーブルに1回だけ実行）
+-- alter table public.entries drop constraint if exists entries_count_check;
+-- alter table public.entries add constraint entries_count_check check (count ~ '^([1-9]|[1-9][0-9]|100)名$');

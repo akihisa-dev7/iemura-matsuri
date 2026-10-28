@@ -202,8 +202,6 @@
             <label for="f-count">参加人数<span class="req">必須</span></label>
             <select id="f-count" name="count" required>
               <option value="" selected disabled>選択してください</option>
-              <option>1名</option><option>2名</option><option>3名</option><option>4名</option>
-              <option>5名</option><option>6名以上</option>
             </select>
           </div>
         </div>
@@ -243,6 +241,10 @@
   const SB_KEY = (window.IEMURA_SUPABASE_KEY || '').trim();
   const db = SB_URL && SB_KEY && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
   const FALLBACK_MAIL = 'kaihatsu@reoken.com';
+
+  // 参加人数の選択肢（1〜MAX_COUNT名）
+  const MAX_COUNT = 100;
+  for (let i = 1; i <= MAX_COUNT; i++) form.elements.count.add(new Option(i + '名'));
 
   const msgs = {
     name:'お名前を入力してください',
