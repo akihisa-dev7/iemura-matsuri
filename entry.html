@@ -149,7 +149,7 @@
     <p class="page-en inkin d2">ENTRY FORM</p>
     <p class="event-strip inkin d3">2026.11.21<span class="dot">(土)</span>京都・河原町付近<span class="dot">|</span>詳細は逐一発表</p>
     <p class="form-lead inkin d3">
-      家村祭への参加をご希望の方は、以下の項目をご記入のうえ「申請する」を押してください。送信が完了すると、この画面に受付完了が表示されます。続報・当日のご案内は、ご記入のメールアドレス宛にお送りします。
+      家村祭への参加をご希望の方は、以下の項目をご記入のうえ「申請する」を押してください。送信が完了すると、この画面に受付完了が表示されます。開催場所・企画などの続報は、このサイトとInstagramでお知らせします。
     </p>
   </div>
 
@@ -172,11 +172,6 @@
           </div>
         </div>
         <div class="field">
-          <label for="f-mail">メールアドレス<span class="req">必須</span></label>
-          <input id="f-mail" name="email" type="email" required maxlength="200" placeholder="例)taro@example.com" autocomplete="email" inputmode="email">
-          <p class="hint">続報・当日のご案内をお送りします。普段お使いのアドレスをご記入ください。</p>
-        </div>
-        <div class="field">
           <label for="f-univ">大学名<span class="req">必須</span></label>
           <input id="f-univ" name="university" type="text" required maxlength="100" placeholder="例)○○大学">
         </div>
@@ -190,7 +185,7 @@
       </form>
       <div class="form-done" id="formDone" tabindex="-1">
         <strong>申請を受け付けました</strong>
-        <span id="doneText">ありがとうございます。続報・当日のご案内は、ご記入のメールアドレス宛にお送りします。当日、河原町でお会いしましょう。</span>
+        <span id="doneText">ありがとうございます。続報はこのサイトとInstagramでお知らせします。当日、河原町でお会いしましょう。</span>
         <button type="button" class="again-btn" id="againBtn">別の申請をする</button>
       </div>
     </div>
@@ -213,7 +208,6 @@
   const msgs = {
     name:'お名前を入力してください',
     count:'参加人数を選択してください',
-    email:'メールアドレスを正しく入力してください',
     university:'大学名を入力してください'
   };
   Object.keys(msgs).forEach(function(k){
@@ -228,7 +222,6 @@
 
   function valid(k){
     const v = (form.elements[k].value || '').trim();
-    if (k === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     return v.length > 0;
   }
   function check(k){
@@ -257,15 +250,13 @@
 
     const data = {
       name: form.elements.name.value.trim(),
-      email: form.elements.email.value.trim(),
       count: form.elements.count.value,
       university: form.elements.university.value.trim(),
       website: form.elements.website.value
     };
 
     if (!API){
-      const body = '【家村祭 参加申請】\n\nお名前:' + data.name + '\nメールアドレス:' + data.email +
-        '\n参加人数:' + data.count + '\n大学名:' + data.university + '\n';
+      const body = '【家村祭 参加申請】\n\nお名前:' + data.name + '\n参加人数:' + data.count + '\n大学名:' + data.university + '\n';
       location.href = 'mailto:' + FALLBACK_MAIL + '?subject=' + encodeURIComponent('家村祭 参加申請(' + data.name + ')') +
         '&body=' + encodeURIComponent(body);
       showDone('開いたメールをそのまま送信いただければ、申請完了です。メールアプリが開かない場合は、' + FALLBACK_MAIL + ' 宛に入力内容をお送りください。');

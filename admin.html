@@ -111,7 +111,7 @@
 
     <div class="list-head">
       <h2>申請一覧</h2>
-      <input class="search" id="search" type="search" placeholder="名前・大学・メールで検索" aria-label="検索">
+      <input class="search" id="search" type="search" placeholder="名前・大学で検索" aria-label="検索">
     </div>
     <div class="table-wrap">
       <table>
@@ -120,7 +120,6 @@
           <th data-k="name">お名前</th>
           <th data-k="countNum">人数</th>
           <th data-k="university">大学名</th>
-          <th data-k="email">メールアドレス</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -174,7 +173,7 @@
     const q = $('search').value.trim().toLowerCase();
     const list = rows
       .filter(r => !univFilter || (r.university || '(未記入)') === univFilter)
-      .filter(r => !q || [r.name, r.university, r.email].join(' ').toLowerCase().includes(q))
+      .filter(r => !q || [r.name, r.university].join(' ').toLowerCase().includes(q))
       .sort((a, b) => {
         const x = a[sortK], y = b[sortK];
         return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'ja')) * sortDir;
@@ -182,7 +181,7 @@
 
     $('tbody').innerHTML = list.map(r =>
       '<tr><td class="num">' + esc(r.at) + '</td><td>' + esc(r.name) + '</td><td class="num">' + esc(r.count) +
-      '</td><td>' + esc(r.university) + '</td><td><a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a></td></tr>'
+      '</td><td>' + esc(r.university) + '</td></tr>'
     ).join('');
     $('empty').hidden = list.length > 0;
     $('empty').textContent = rows.length ? '該当する申請はありません。' : 'まだ申請はありません。';
@@ -242,9 +241,9 @@
     render();
   }));
   $('csvBtn').addEventListener('click', () => {
-    const head = ['受付日時', 'お名前', 'メールアドレス', '参加人数', '大学名'];
+    const head = ['受付日時', 'お名前', '参加人数', '大学名'];
     const q = v => '"' + String(v).replace(/"/g, '""') + '"';
-    const body = rows.map(r => [r.at, r.name, r.email, r.count, r.university].map(q).join(','));
+    const body = rows.map(r => [r.at, r.name, r.count, r.university].map(q).join(','));
     const blob = new Blob(['﻿' + [head.map(q).join(',')].concat(body).join('\r\n')], {type: 'text/csv'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
