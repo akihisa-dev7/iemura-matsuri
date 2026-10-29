@@ -1,0 +1,24 @@
+services:
+  web:
+    image: nginx:alpine
+    container_name: iemura-matsuri-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ..:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Cloudflare Tunnel — iemura.net をこのマシンに公開する
+  # TUNNEL_TOKEN は hosting/.env に書く（git には入れない）
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: iemura-matsuri-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - web
+    profiles:
+      - tunnel
