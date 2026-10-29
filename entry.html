@@ -206,8 +206,15 @@
           </div>
         </div>
         <div class="field">
-          <label for="f-univ">大学名<span class="req">必須</span></label>
-          <input id="f-univ" name="university" type="text" required maxlength="100" placeholder="例)○○大学">
+          <label for="f-job">職業<span class="req">必須</span></label>
+          <select id="f-job" name="occupation" required>
+            <option value="" selected disabled>選択してください</option>
+            <option>大学生</option>
+            <option>専門学生</option>
+            <option>高校生</option>
+            <option>社会人</option>
+            <option>その他</option>
+          </select>
         </div>
         <div class="hp" aria-hidden="true">
           <label for="f-web">Website</label>
@@ -249,7 +256,7 @@
   const msgs = {
     name:'お名前を入力してください',
     count:'参加人数を選択してください',
-    university:'大学名を入力してください'
+    occupation:'職業を選択してください'
   };
   Object.keys(msgs).forEach(function(k){
     const el = form.elements[k];
@@ -292,7 +299,7 @@
     const data = {
       name: form.elements.name.value.trim(),
       count: form.elements.count.value,
-      university: form.elements.university.value.trim(),
+      occupation: form.elements.occupation.value,
       website: form.elements.website.value
     };
 
@@ -300,7 +307,7 @@
     if (data.website){ showDone(); return; }
 
     if (!db){
-      const body = '【家村祭 参加申請】\n\nお名前:' + data.name + '\n参加人数:' + data.count + '\n大学名:' + data.university + '\n';
+      const body = '【家村祭 参加申請】\n\nお名前:' + data.name + '\n参加人数:' + data.count + '\n職業:' + data.occupation + '\n';
       location.href = 'mailto:' + FALLBACK_MAIL + '?subject=' + encodeURIComponent('家村祭 参加申請(' + data.name + ')') +
         '&body=' + encodeURIComponent(body);
       showDone('開いたメールをそのまま送信いただければ、申請完了です。メールアプリが開かない場合は、' + FALLBACK_MAIL + ' 宛に入力内容をお送りください。');
@@ -312,7 +319,7 @@
     btn.textContent = '送信中…';
     try {
       const { error } = await db.from('entries').insert({
-        name: data.name, count: data.count, university: data.university
+        name: data.name, count: data.count, occupation: data.occupation
       });
       if (error) throw new Error('send failed: ' + error.message);
       form.reset();

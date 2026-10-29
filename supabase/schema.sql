@@ -6,7 +6,7 @@ create table if not exists public.entries (
   created_at  timestamptz not null default now(),
   name        text not null check (char_length(btrim(name)) between 1 and 100),
   count       text not null check (count ~ '^([1-9]|[1-9][0-9]|100)名$'),  -- 1〜100名
-  university  text not null check (char_length(btrim(university)) between 1 and 100)
+  occupation  text not null check (occupation in ('大学生', '専門学生', '高校生', '社会人', 'その他'))
 );
 
 -- 管理画面を見られる人（Supabase の Authentication で作ったユーザーのメールアドレス）
@@ -42,7 +42,7 @@ create policy "admins can read" on public.entries
 
 -- id・受付日時はクライアントから指定させない
 revoke insert on public.entries from anon, authenticated;
-grant insert (name, count, university) on public.entries to anon, authenticated;
+grant insert (name, count, occupation) on public.entries to anon, authenticated;
 grant select on public.entries to authenticated;
 
 -- ▼ 管理者のメールアドレスを登録（自分のアドレスに書き換えて実行）
@@ -51,3 +51,11 @@ grant select on public.entries to authenticated;
 -- ▼ 参加人数を「1〜100名」に変更したときの更新用（既存のテーブルに1回だけ実行）
 -- alter table public.entries drop constraint if exists entries_count_check;
 -- alter table public.entries add constraint entries_count_check check (count ~ '^([1-9]|[1-9][0-9]|100)名$');
+
+-- ▼ 「大学名」を「職業」に変更したときの更新用（既存のテーブルに1回だけ実行）
+-- alter table public.entries rename column university to occupation;
+-- update public.entries set occupation = '大学生' where occupation not in ('大学生', '専門学生', '高校生', '社会人', 'その他');
+-- alter table public.entries drop constraint if exists entries_university_check;
+-- alter table public.entries add constraint entries_occupation_check check (occupation in ('大学生', '専門学生', '高校生', '社会人', 'その他'));
+-- revoke insert on public.entries from anon, authenticated;
+-- grant insert (name, count, occupation) on public.entries to anon, authenticated;
