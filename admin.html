@@ -69,9 +69,13 @@
   td.num{font-variant-numeric:tabular-nums}
   td a{color:var(--ai)}
   tr:last-child td{border-bottom:none}
+  th.act{cursor:default}
+  button.del{font-size:.75rem;padding:.25rem .8rem;border-color:var(--shu);color:var(--shu-deep)}
+  button.del:hover{background:var(--shu);color:#fff}
   .empty{padding:2.4rem 1rem;text-align:center;color:var(--sumi-soft);font-size:.88rem}
   .updated{font-size:.75rem;color:var(--sumi-soft);margin-top:.6rem}
   [hidden]{display:none !important}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -122,6 +126,7 @@
           <th data-k="name">お名前</th>
           <th data-k="countNum">人数</th>
           <th data-k="occupation">職業</th>
+          <th class="act"><span class="sr-only">操作</span></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -186,7 +191,7 @@
 
     $('tbody').innerHTML = list.map(r =>
       '<tr><td class="num">' + esc(r.at) + '</td><td>' + esc(r.name) + '</td><td class="num">' + esc(r.count) +
-      '</td><td>' + esc(r.occupation) + '</td></tr>'
+      '</td><td>' + esc(r.occupation) + '</td><td><button type="button" class="del" data-id="' + esc(r.id) + '">削除</button></td></tr>'
     ).join('');
     $('empty').hidden = list.length > 0;
     $('empty').textContent = rows.length ? '該当する申請はありません。' : 'まだ申請はありません。';
@@ -244,6 +249,21 @@
     await db.auth.signOut();
     $('keyInput').value = '';
     showDash(false);
+  });
+  $('tbody').addEventListener('click', async ev => {
+    const b = ev.target.closest('button.del'); if (!b) return;
+    const r = rows.find(x => String(x.id) === b.dataset.id); if (!r) return;
+    if (!confirm('「' + r.name + '」さん(' + r.count + '・' + r.occupation + ')の申請を削除しますか？\nこの操作は取り消せません。')) return;
+    b.disabled = true;
+    // 権限がないとエラーにならず0件削除になるので、消えた行を返してもらって確認する
+    const { data, error } = await db.from('entries').delete().eq('id', r.id).select('id');
+    if (error || !data || !data.length){
+      alert('削除できませんでした。' + (error ? '(' + error.message + ')' : '(削除の権限がありません。schema.sql の削除用の設定を実行してください)'));
+      b.disabled = false;
+      return;
+    }
+    rows = rows.filter(x => x.id !== r.id);
+    render();
   });
   $('search').addEventListener('input', render);
   $('univChips').addEventListener('click', ev => {

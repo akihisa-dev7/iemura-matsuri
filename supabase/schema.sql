@@ -34,16 +34,22 @@ create policy "anyone can submit" on public.entries
   with check (true);
 
 -- 管理画面：admins に登録されたユーザーだけ読める
--- （削除・修正は Supabase の Table Editor で行う）
+-- （修正は Supabase の Table Editor で行う）
 drop policy if exists "admins can read" on public.entries;
 create policy "admins can read" on public.entries
   for select to authenticated
   using (public.is_admin());
 
+-- 管理画面：admins に登録されたユーザーだけ削除できる
+drop policy if exists "admins can delete" on public.entries;
+create policy "admins can delete" on public.entries
+  for delete to authenticated
+  using (public.is_admin());
+
 -- id・受付日時はクライアントから指定させない
 revoke insert on public.entries from anon, authenticated;
 grant insert (name, count, occupation) on public.entries to anon, authenticated;
-grant select on public.entries to authenticated;
+grant select, delete on public.entries to authenticated;
 
 -- ▼ 管理者のメールアドレスを登録（自分のアドレスに書き換えて実行）
 -- insert into public.admins (email) values ('you@example.com') on conflict do nothing;
@@ -59,3 +65,8 @@ grant select on public.entries to authenticated;
 -- alter table public.entries add constraint entries_occupation_check check (occupation in ('大学生', '専門学生', '高校生', '社会人', 'その他'));
 -- revoke insert on public.entries from anon, authenticated;
 -- grant insert (name, count, occupation) on public.entries to anon, authenticated;
+
+-- ▼ 管理画面から参加者を削除できるようにしたときの更新用（既存のテーブルに1回だけ実行）
+-- drop policy if exists "admins can delete" on public.entries;
+-- create policy "admins can delete" on public.entries for delete to authenticated using (public.is_admin());
+-- grant delete on public.entries to authenticated;
